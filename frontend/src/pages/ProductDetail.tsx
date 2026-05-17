@@ -18,7 +18,7 @@ export default function ProductDetail() {
 
   const loadProduct = async () => {
     try {
-      const data = await productService.getProduct(slug!)
+      const data = await productService.getProductBySlug(slug!)
       setProduct(data)
       if (data.variants?.[0]) setSelectedVariant(data.variants[0].id)
     } catch (e) { console.error(e) }

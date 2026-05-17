@@ -161,7 +161,7 @@ export default function Cart() {
                   <span style={{ color: 'var(--navy-800)' }}>₹{total.toLocaleString('en-IN')}</span>
                 </div>
 
-                <Link to="/dashboard/orders" className="btn btn-primary btn-full" style={{ marginTop: '0.5rem', fontSize: '0.95rem', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', padding: '0.75rem' }}>
+                <Link to="/dashboard/checkout" className="btn btn-primary btn-full" style={{ marginTop: '0.5rem', fontSize: '0.95rem', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', padding: '0.75rem' }}>
                   Proceed to Checkout <ArrowRight style={{ width: '17px', height: '17px' }} />
                 </Link>
                 <Link to="/products" style={{ display: 'block', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-text-muted)', textDecoration: 'none', marginTop: '0.25rem' }}>

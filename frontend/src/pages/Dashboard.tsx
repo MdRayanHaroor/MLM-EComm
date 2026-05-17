@@ -53,7 +53,7 @@ export default function Dashboard() {
       {/* Welcome */}
       <div style={{ marginBottom: '1.75rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--navy-800)', letterSpacing: '-0.02em' }}>
-          Welcome back, {user?.full_name?.split(' ')[0]} 👋
+          Welcome, {user?.full_name?.split(' ')[0]} 👋
         </h1>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Here's an overview of your account</p>
       </div>

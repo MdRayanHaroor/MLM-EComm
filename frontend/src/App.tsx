@@ -3,6 +3,7 @@ import MainLayout from './layouts/MainLayout'
 import DashboardLayout from './layouts/DashboardLayout'
 import AdminLayout from './layouts/AdminLayout'
 import Home from './pages/Home'
+import HowItWorks from './pages/HowItWorks'
 import Products from './pages/Products'
 import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
@@ -10,6 +11,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Orders from './pages/Orders'
+import OrderDetail from './pages/OrderDetail'
+import Checkout from './pages/Checkout'
 import Wallet from './pages/Wallet'
 import Downline from './pages/Downline'
 import Commissions from './pages/Commissions'
@@ -28,6 +31,7 @@ function App() {
     <Routes>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
+        <Route path="how-it-works" element={<HowItWorks />} />
         <Route path="products" element={<Products />} />
         <Route path="products/:slug" element={<ProductDetail />} />
         <Route path="cart" element={<Cart />} />
@@ -42,6 +46,8 @@ function App() {
       }>
         <Route index element={<Dashboard />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="orders/:id" element={<OrderDetail />} />
+        <Route path="checkout" element={<Checkout />} />
         <Route path="wallet" element={<Wallet />} />
         <Route path="downline" element={<Downline />} />
         <Route path="commissions" element={<Commissions />} />

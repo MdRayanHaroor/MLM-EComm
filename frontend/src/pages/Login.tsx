@@ -48,7 +48,7 @@ export default function Login() {
             </div>
           </div>
           <h2 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: '1rem' }}>
-            Welcome Back to MLM Store
+            Welcome to MLM Store
           </h2>
           <p style={{ color: '#94a3b8', lineHeight: 1.7, marginBottom: '2rem', fontSize: '0.9375rem' }}>
             Sign in to access your dashboard, track orders, manage your downline and check your earnings.

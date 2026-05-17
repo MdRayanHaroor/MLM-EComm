@@ -353,6 +353,9 @@ export default function MainLayout() {
                   {cat}
                 </Link>
               ))}
+              <Link to="/how-it-works" style={navLinkStyle}>
+                ❓ How It Works
+              </Link>
               <Link to="/register" style={{ ...navLinkStyle, color: 'var(--amber-400)', fontWeight: 600 }}>
                 ⭐ Earn & Refer
               </Link>
@@ -492,30 +495,45 @@ export default function MainLayout() {
             {[
               {
                 title: 'Customer Service',
-                links: ['Help Center', 'Track Order', 'Return Policy', 'Payment Options'],
+                links: [
+                  { label: 'Help Center', to: '/how-it-works' },
+                  { label: 'Track Order', to: '/dashboard/orders' },
+                  { label: 'Return Policy', to: '/how-it-works' },
+                  { label: 'Payment Options', to: '/how-it-works' },
+                ],
               },
               {
                 title: 'My Account',
-                links: ['Sign In', 'Register', 'My Orders', 'My Wallet'],
+                links: [
+                  { label: 'Sign In', to: '/login' },
+                  { label: 'Register', to: '/register' },
+                  { label: 'My Orders', to: '/dashboard/orders' },
+                  { label: 'My Wallet', to: '/dashboard/wallet' },
+                ],
               },
               {
                 title: 'MLM Program',
-                links: ['How It Works', 'Commission Structure', 'Rank Benefits', 'Join Now'],
+                links: [
+                  { label: 'How It Works', to: '/how-it-works' },
+                  { label: 'Commission Structure', to: '/how-it-works' },
+                  { label: 'Rank Benefits', to: '/how-it-works' },
+                  { label: 'Join Now', to: '/register' },
+                ],
               },
             ].map(col => (
               <div key={col.title}>
                 <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.875rem' }}>{col.title}</div>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {col.links.map(link => (
-                    <li key={link}>
-                      <a href="#" style={{
+                    <li key={link.label}>
+                      <Link to={link.to} style={{
                         color: '#94a3b8', textDecoration: 'none', fontSize: '0.8125rem',
                         transition: 'color var(--transition-fast)',
                       }}
                         onMouseOver={e => (e.currentTarget.style.color = 'var(--amber-400)')}
                         onMouseOut={e => (e.currentTarget.style.color = '#94a3b8')}>
-                        {link}
-                      </a>
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>

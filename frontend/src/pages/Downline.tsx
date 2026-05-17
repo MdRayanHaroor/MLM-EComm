@@ -50,7 +50,7 @@ function DownlineNode({ node, depth = 0 }: { node: MatrixNode; depth?: number })
           <p style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--navy-800)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {node.full_name || 'Empty Slot'}
           </p>
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.2rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.2rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
               <Award style={{ width: '10px', height: '10px', display: 'inline', marginRight: '2px' }} />
               {node.current_rank || 'Starter'}
@@ -59,6 +59,11 @@ function DownlineNode({ node, depth = 0 }: { node: MatrixNode; depth?: number })
               <TrendingUp style={{ width: '10px', height: '10px', display: 'inline', marginRight: '2px' }} />
               {node.pv_balance ?? 0} PV
             </span>
+            {node.referral_code && (
+              <span style={{ fontSize: '0.7rem', color: 'var(--amber-600)', fontWeight: 600, fontFamily: 'monospace' }}>
+                {node.referral_code}
+              </span>
+            )}
           </div>
         </div>
 

@@ -14,8 +14,8 @@ export const productService = {
     return data
   },
 
-  getProduct: async (id: string): Promise<Product> => {
-    const { data } = await api.get(`/products/${id}`)
+  getProductBySlug: async (slug: string): Promise<Product> => {
+    const { data } = await api.get(`/products/slug/${slug}`)
     return data
   },
 

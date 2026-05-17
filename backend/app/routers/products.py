@@ -36,15 +36,15 @@ async def list_products(
     return {"products": products, "total": len(response.data), "page": page, "limit": limit}
 
 
-@router.get("/{product_id}")
-async def get_product(product_id: str):
-    product = supabase.table("products").select("*, categories(name, slug, gst_rate, shipping_rate)").eq("id", product_id).eq("is_active", True).execute()
+@router.get("/slug/{slug}")
+async def get_product(slug: str):
+    product = supabase.table("products").select("*, categories(name, slug, gst_rate, shipping_rate)").eq("slug", slug).eq("is_active", True).execute()
     if not product.data:
         raise HTTPException(status_code=404, detail="Product not found")
 
     result = product.data[0]
     if result.get("has_variants"):
-        variants = supabase.table("product_variants").select("*").eq("product_id", product_id).eq("is_active", True).execute()
+        variants = supabase.table("product_variants").select("*").eq("product_id", result["id"]).eq("is_active", True).execute()
         result["variants"] = variants.data
 
     return result

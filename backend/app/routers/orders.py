@@ -108,6 +108,39 @@ async def get_orders(user=Depends(get_current_user)):
     return orders.data
 
 
+@router.post("/addresses")
+async def create_address(data: AddressCreate, user=Depends(get_current_user)):
+    address_data = data.model_dump()
+    address_data["user_id"] = user.id
+
+    if data.is_default:
+        supabase.table("addresses").update({"is_default": False}).eq("user_id", user.id).execute()
+
+    result = supabase.table("addresses").insert(address_data).execute()
+    return result.data[0]
+
+
+@router.get("/addresses")
+async def get_addresses(user=Depends(get_current_user)):
+    addresses = supabase.table("addresses").select("*").eq("user_id", user.id).execute()
+    return addresses.data
+
+
+@router.put("/addresses/{address_id}")
+async def update_address(address_id: str, data: AddressUpdate, user=Depends(get_current_user)):
+    update_data = data.model_dump(exclude_none=True)
+    if data.is_default:
+        supabase.table("addresses").update({"is_default": False}).eq("user_id", user.id).execute()
+    result = supabase.table("addresses").update(update_data).eq("id", address_id).eq("user_id", user.id).execute()
+    return result.data[0] if result.data else {"message": "No changes"}
+
+
+@router.delete("/addresses/{address_id}")
+async def delete_address(address_id: str, user=Depends(get_current_user)):
+    supabase.table("addresses").delete().eq("id", address_id).eq("user_id", user.id).execute()
+    return {"message": "Address deleted"}
+
+
 @router.get("/{order_id}")
 async def get_order(order_id: str, user=Depends(get_current_user)):
     order = supabase.table("orders").select("*").eq("id", order_id).eq("user_id", user.id).execute()
@@ -146,36 +179,3 @@ async def get_all_orders():
 async def update_order_status(order_id: str, status_data: dict):
     supabase.table("orders").update({"status": status_data["status"]}).eq("id", order_id).execute()
     return {"message": "Order status updated"}
-
-
-@router.post("/addresses")
-async def create_address(data: AddressCreate, user=Depends(get_current_user)):
-    address_data = data.model_dump()
-    address_data["user_id"] = user.id
-
-    if data.is_default:
-        supabase.table("addresses").update({"is_default": False}).eq("user_id", user.id).execute()
-
-    result = supabase.table("addresses").insert(address_data).execute()
-    return result.data[0]
-
-
-@router.get("/addresses")
-async def get_addresses(user=Depends(get_current_user)):
-    addresses = supabase.table("addresses").select("*").eq("user_id", user.id).execute()
-    return addresses.data
-
-
-@router.put("/addresses/{address_id}")
-async def update_address(address_id: str, data: AddressUpdate, user=Depends(get_current_user)):
-    update_data = data.model_dump(exclude_none=True)
-    if data.is_default:
-        supabase.table("addresses").update({"is_default": False}).eq("user_id", user.id).execute()
-    result = supabase.table("addresses").update(update_data).eq("id", address_id).eq("user_id", user.id).execute()
-    return result.data[0] if result.data else {"message": "No changes"}
-
-
-@router.delete("/addresses/{address_id}")
-async def delete_address(address_id: str, user=Depends(get_current_user)):
-    supabase.table("addresses").delete().eq("id", address_id).eq("user_id", user.id).execute()
-    return {"message": "Address deleted"}

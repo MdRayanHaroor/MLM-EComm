@@ -62,10 +62,12 @@ export default function Addresses() {
         <>
           <div className="overlay" onClick={() => setShowForm(false)} />
           <div className="animate-scale-in" style={{
-            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-            zIndex: 60, width: '100%', maxWidth: '520px', padding: '0 1rem', maxHeight: '90vh', overflowY: 'auto',
+            position: 'fixed', inset: 0,
+            zIndex: 60,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '1rem',
           }}>
-            <div className="card">
+            <div className="card" style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
               <div style={{ padding: '1.125rem 1.25rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
                 <h2 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--navy-800)' }}>Add New Address</h2>
                 <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '0.25rem' }}>
