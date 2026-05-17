@@ -1,24 +1,25 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/admin'
 import { Order } from '../../types'
+import SkeletonLoader from '../../components/ui/SkeletonLoader'
+import StatusBadge from '../../components/ui/StatusBadge'
+import EmptyState from '../../components/ui/EmptyState'
+import PageHeader from '../../components/ui/PageHeader'
+import { ShoppingCart } from 'lucide-react'
+
+const statusOptions = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned']
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterStatus, setFilterStatus] = useState('all')
 
-  useEffect(() => {
-    loadOrders()
-  }, [])
+  useEffect(() => { loadOrders() }, [])
 
   const loadOrders = async () => {
-    try {
-      const data = await adminService.getOrders()
-      setOrders(data)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
+    try { setOrders(await adminService.getOrders()) }
+    catch (e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
   const updateStatus = async (orderId: string, status: string) => {
@@ -26,55 +27,76 @@ export default function AdminOrders() {
     loadOrders()
   }
 
-  if (loading) return <div>Loading...</div>
+  const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus)
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Orders</h1>
+    <div className="animate-fade-in">
+      <PageHeader title="Orders" subtitle={`${orders.length} total orders`} />
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="text-left p-4 text-sm font-medium">Order #</th>
-              <th className="text-left p-4 text-sm font-medium">Amount</th>
-              <th className="text-left p-4 text-sm font-medium">Payment</th>
-              <th className="text-left p-4 text-sm font-medium">Status</th>
-              <th className="text-left p-4 text-sm font-medium">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.id} className="border-t">
-                <td className="p-4 font-mono text-sm">{order.order_number}</td>
-                <td className="p-4">₹{order.total_amount}</td>
-                <td className="p-4">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    order.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {order.payment_status}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <select
-                    value={order.status}
-                    onChange={(e) => updateStatus(order.id, e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="returned">Returned</option>
-                  </select>
-                </td>
-                <td className="p-4 text-sm">{new Date(order.created_at).toLocaleDateString()}</td>
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '1.25rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+        {['all', ...statusOptions].map(s => (
+          <button key={s} onClick={() => setFilterStatus(s)} style={{
+            padding: '0.4rem 0.875rem', borderRadius: '999px', border: 'none',
+            background: filterStatus === s ? 'var(--navy-800)' : 'var(--gray-100)',
+            color: filterStatus === s ? '#fff' : 'var(--color-text-secondary)',
+            fontSize: '0.8125rem', fontWeight: filterStatus === s ? 700 : 500,
+            cursor: 'pointer', flexShrink: 0, transition: 'all var(--transition-fast)',
+            textTransform: 'capitalize',
+          }}>
+            {s === 'all' ? 'All' : s}
+          </button>
+        ))}
+      </div>
+
+      <div className="table-wrapper">
+        {loading ? (
+          <table className="data-table"><tbody><SkeletonLoader type="table-row" count={7} /></tbody></table>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={ShoppingCart} title="No orders found" />
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Amount</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Update Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map(order => (
+                <tr key={order.id}>
+                  <td>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem', color: 'var(--navy-800)' }}>
+                      #{order.order_number}
+                    </span>
+                  </td>
+                  <td style={{ fontWeight: 700, color: 'var(--navy-800)' }}>₹{order.total_amount?.toLocaleString('en-IN')}</td>
+                  <td><StatusBadge status={order.payment_status} /></td>
+                  <td><StatusBadge status={order.status} /></td>
+                  <td style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+                    {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td>
+                    <select
+                      value={order.status}
+                      onChange={e => updateStatus(order.id, e.target.value)}
+                      className="form-select"
+                      style={{ width: 'auto', minWidth: '130px', fontSize: '0.8rem', padding: '0.35rem 2rem 0.35rem 0.625rem' }}
+                    >
+                      {statusOptions.map(s => (
+                        <option key={s} value={s} style={{ textTransform: 'capitalize' }}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )

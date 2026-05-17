@@ -144,6 +144,8 @@ export interface Withdrawal {
   method: string
   status: string
   requested_at: string
+  upi_id?: string
+  account_number?: string
 }
 
 export interface MatrixNode {

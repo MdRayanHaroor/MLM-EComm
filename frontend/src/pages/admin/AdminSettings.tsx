@@ -1,125 +1,157 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '../../services/admin'
 import { CommissionSettings, RankSettings } from '../../types'
+import { Check, DollarSign, Award, Settings } from 'lucide-react'
+import PageHeader from '../../components/ui/PageHeader'
+
+type Tab = 'commissions' | 'ranks'
 
 export default function AdminSettings() {
+  const [activeTab, setActiveTab] = useState<Tab>('commissions')
   const [commissionSettings, setCommissionSettings] = useState<CommissionSettings | null>(null)
   const [rankSettings, setRankSettings] = useState<RankSettings[]>([])
-  const [saved, setSaved] = useState(false)
+  const [savedComm, setSavedComm] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadSettings()
-  }, [])
+  useEffect(() => { loadSettings() }, [])
 
   const loadSettings = async () => {
     try {
-      const [comm, ranks] = await Promise.all([
-        adminService.getCommissionSettings(),
-        adminService.getRankSettings(),
-      ])
+      const [comm, ranks] = await Promise.all([adminService.getCommissionSettings(), adminService.getRankSettings()])
       setCommissionSettings(comm)
       setRankSettings(ranks)
-    } catch (error) {
-      console.error(error)
-    }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
   const saveCommission = async () => {
     if (!commissionSettings) return
     try {
       await adminService.updateCommissionSettings(commissionSettings)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } catch (error) {
-      console.error(error)
-    }
+      setSavedComm(true)
+      setTimeout(() => setSavedComm(false), 2500)
+    } catch (e) { console.error(e) }
   }
 
-  if (!commissionSettings) return <div>Loading...</div>
+  const tabs: { id: Tab; label: string; icon: typeof DollarSign }[] = [
+    { id: 'commissions', label: 'Commission Settings', icon: DollarSign },
+    { id: 'ranks', label: 'Rank Settings', icon: Award },
+  ]
+
+  const commFields = [
+    { key: 'direct_referral_percent', label: 'Direct Referral', desc: 'Commission % on direct referral orders' },
+    { key: 'level_1_percent',         label: 'Level 1',         desc: "Commission % from sponsor's sponsor" },
+    { key: 'level_2_percent',         label: 'Level 2',         desc: '3rd upline commission %' },
+    { key: 'level_3_percent',         label: 'Level 3',         desc: '4th upline commission %' },
+    { key: 'level_4_percent',         label: 'Level 4',         desc: '5th upline commission %' },
+  ] as const
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <div className="animate-fade-in">
+      <PageHeader title="Platform Settings" subtitle="Configure commission rates and rank requirements"
+        action={<Settings style={{ width: '20px', height: '20px', color: 'var(--color-text-muted)' }} />}
+      />
 
-      <div className="bg-white p-6 rounded-lg shadow mb-6">
-        <h2 className="text-lg font-semibold mb-4">Commission Percentages</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Direct Referral (%)</label>
-            <input
-              type="number"
-              value={commissionSettings.direct_referral_percent}
-              onChange={(e) => setCommissionSettings({ ...commissionSettings, direct_referral_percent: parseFloat(e.target.value) })}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Level 1 (%)</label>
-            <input
-              type="number"
-              value={commissionSettings.level_1_percent}
-              onChange={(e) => setCommissionSettings({ ...commissionSettings, level_1_percent: parseFloat(e.target.value) })}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Level 2 (%)</label>
-            <input
-              type="number"
-              value={commissionSettings.level_2_percent}
-              onChange={(e) => setCommissionSettings({ ...commissionSettings, level_2_percent: parseFloat(e.target.value) })}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Level 3 (%)</label>
-            <input
-              type="number"
-              value={commissionSettings.level_3_percent}
-              onChange={(e) => setCommissionSettings({ ...commissionSettings, level_3_percent: parseFloat(e.target.value) })}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Level 4 (%)</label>
-            <input
-              type="number"
-              value={commissionSettings.level_4_percent}
-              onChange={(e) => setCommissionSettings({ ...commissionSettings, level_4_percent: parseFloat(e.target.value) })}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-        </div>
-        <button onClick={saveCommission} className="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
-          Save Commission Settings
-        </button>
-        {saved && <p className="text-green-600 text-sm mt-2">Settings saved!</p>}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1px' }}>
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+            display: 'flex', alignItems: 'center', gap: '0.375rem',
+            padding: '0.625rem 1rem',
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 700 : 500,
+            color: activeTab === tab.id ? 'var(--navy-800)' : 'var(--color-text-muted)',
+            borderBottom: `2px solid ${activeTab === tab.id ? 'var(--amber-500)' : 'transparent'}`,
+            transition: 'all var(--transition-fast)',
+            marginBottom: '-1px',
+          }}>
+            <tab.icon style={{ width: '15px', height: '15px' }} />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-4">Rank Settings</h2>
-        <div className="space-y-4">
-          {rankSettings.map((rank) => (
-            <div key={rank.id} className="flex items-center gap-4 p-4 border rounded-lg">
-              <span className="font-semibold w-24">{rank.rank_name}</span>
-              <div className="flex-1 grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs text-gray-500">Required PV</label>
-                  <input type="number" defaultValue={rank.required_pv} className="w-full px-3 py-1 border rounded" />
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {[1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: '80px', borderRadius: 'var(--radius-lg)' }} />)}
+        </div>
+      ) : activeTab === 'commissions' && commissionSettings ? (
+        <div className="card">
+          <div style={{ padding: '1.125rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--navy-800)' }}>Commission Percentages</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>Set the commission % for each level in the MLM hierarchy</p>
+          </div>
+          <div style={{ padding: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              {commFields.map(field => (
+                <div key={field.key} className="card" style={{ padding: '1rem', border: '1.5px solid var(--gray-200)' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '0.5rem' }}>
+                    {field.label}
+                  </label>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginBottom: '0.625rem' }}>{field.desc}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                    <input
+                      type="number" step="0.1" min="0" max="100"
+                      value={(commissionSettings as any)[field.key] as number}
+                      onChange={e => setCommissionSettings({ ...commissionSettings, [field.key]: parseFloat(e.target.value) })}
+                      className="form-input"
+                      style={{ textAlign: 'center', fontWeight: 700, fontSize: '1.1rem' }}
+                    />
+                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-text-muted)' }}>%</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500">Direct Referrals</label>
-                  <input type="number" defaultValue={rank.required_direct_referrals} className="w-full px-3 py-1 border rounded" />
+              ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button onClick={saveCommission} className="btn btn-primary">
+                Save Commission Settings
+              </button>
+              {savedComm && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--color-success)', fontSize: '0.875rem', fontWeight: 600 }}>
+                  <Check style={{ width: '16px', height: '16px' }} /> Saved!
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500">Multiplier</label>
-                  <input type="number" step="0.1" defaultValue={rank.commission_multiplier} className="w-full px-3 py-1 border rounded" />
+              )}
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'ranks' ? (
+        <div className="card">
+          <div style={{ padding: '1.125rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--navy-800)' }}>Rank Requirements</h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>Configure PV, referral, and multiplier requirements for each rank</p>
+          </div>
+          <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            {rankSettings.map(rank => (
+              <div key={rank.id} style={{
+                display: 'grid', gridTemplateColumns: 'minmax(100px, 1fr) repeat(3, minmax(120px, 1fr))',
+                gap: '0.875rem', alignItems: 'center',
+                padding: '1rem', border: '1.5px solid var(--gray-200)', borderRadius: 'var(--radius-md)',
+                background: '#fff',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Award style={{ width: '16px', height: '16px', color: 'var(--amber-500)' }} />
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--navy-800)' }}>{rank.rank_name}</span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Required PV</label>
+                  <input type="number" defaultValue={rank.required_pv} className="form-input" style={{ padding: '0.4rem 0.625rem' }} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Direct Referrals</label>
+                  <input type="number" defaultValue={rank.required_direct_referrals} className="form-input" style={{ padding: '0.4rem 0.625rem' }} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Commission ×</label>
+                  <input type="number" step="0.05" defaultValue={rank.commission_multiplier} className="form-input" style={{ padding: '0.4rem 0.625rem' }} />
                 </div>
               </div>
+            ))}
+            <div style={{ marginTop: '0.5rem' }}>
+              <button className="btn btn-primary">Save Rank Settings</button>
             </div>
-          ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   )
 }
