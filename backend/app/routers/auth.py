@@ -1,10 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.database import supabase
+from app.config import get_settings
 from app.models.auth import RegisterRequest, LoginRequest, UserResponse, ProfileResponse, ProfileUpdate
 from app.middleware.auth import get_current_user
 import uuid
 import string
 import random
+import httpx
+
+settings = get_settings()
 
 router = APIRouter()
 
@@ -14,6 +18,19 @@ def generate_referral_code() -> str:
     return "".join(random.choices(chars, k=8))
 
 
+async def supabase_auth_request(endpoint: str, payload: dict):
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{settings.SUPABASE_URL}/auth/v1/{endpoint}",
+            json=payload,
+            headers={
+                "apikey": settings.SUPABASE_ANON_KEY,
+                "Content-Type": "application/json",
+            },
+        )
+        return resp.json()
+
+
 @router.post("/register")
 async def register(data: RegisterRequest):
     try:
@@ -21,15 +38,18 @@ async def register(data: RegisterRequest):
         if existing.data:
             raise HTTPException(status_code=400, detail="Email already registered")
 
-        auth_response = supabase.auth.sign_up({
+        auth_response = await supabase_auth_request("signup", {
             "email": data.email,
             "password": data.password,
         })
 
-        if not auth_response.user:
-            raise HTTPException(status_code=400, detail="Registration failed")
+        if "error_code" in auth_response:
+            raise HTTPException(status_code=400, detail=auth_response.get("msg", "Registration failed"))
 
-        user_id = auth_response.user.id
+        user_id = auth_response.get("id") or auth_response.get("user", {}).get("id")
+        if not user_id:
+            raise HTTPException(status_code=400, detail="Registration failed - no user ID")
+
         referral_code = generate_referral_code()
 
         sponsor_id = None
@@ -74,18 +94,22 @@ async def register(data: RegisterRequest):
 @router.post("/login")
 async def login(data: LoginRequest):
     try:
-        response = supabase.auth.sign_in_with_password({
+        auth_response = await supabase_auth_request("token?grant_type=password", {
             "email": data.email,
             "password": data.password,
         })
 
-        if not response.session:
+        if "error_code" in auth_response:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        access_token = auth_response.get("access_token")
+        if not access_token:
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         return {
-            "access_token": response.session.access_token,
-            "refresh_token": response.session.refresh_token,
-            "user_id": response.user.id,
+            "access_token": access_token,
+            "refresh_token": auth_response.get("refresh_token"),
+            "user_id": auth_response.get("user", {}).get("id"),
         }
     except HTTPException:
         raise
