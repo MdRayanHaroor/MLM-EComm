@@ -36,7 +36,7 @@ export default function Home() {
       {/* ── HERO ── */}
       <section style={{
         background: 'linear-gradient(135deg, var(--navy-900) 0%, var(--navy-700) 50%, #1e3a5f 100%)',
-        padding: '5rem 0 4rem',
+        padding: '3rem 0 2.5rem',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -54,7 +54,7 @@ export default function Home() {
         }} />
 
         <div className="page-container" style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ maxWidth: '680px', marginBottom: '1rem' }}>
+          <div style={{ maxWidth: '680px', marginBottom: '0rem' }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
               background: 'rgba(245,158,11,0.15)',

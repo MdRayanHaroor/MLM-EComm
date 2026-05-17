@@ -23,7 +23,7 @@ export default function Login() {
       localStorage.setItem('auth_token', data.access_token)
       const user = await authService.getMe()
       setUser(user)
-      navigate('/dashboard')
+      navigate(user.role === 'super_admin' || user.role === 'admin' ? '/admin' : '/dashboard')
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { detail?: string } } }
       setError(axiosError.response?.data?.detail || 'Invalid email or password')

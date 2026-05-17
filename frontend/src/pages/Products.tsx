@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { productService } from '../services/products'
 import { Product, Category } from '../types'
 import { Search, SlidersHorizontal, Star, ShoppingCart, X } from 'lucide-react'
@@ -7,6 +7,7 @@ import SkeletonLoader from '../components/ui/SkeletonLoader'
 import EmptyState from '../components/ui/EmptyState'
 
 export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -17,12 +18,6 @@ export default function Products() {
 
   useEffect(() => {
     loadData()
-    // Pre-fill search from URL params
-    const params = new URLSearchParams(window.location.search)
-    const q = params.get('search')
-    const cat = params.get('category')
-    if (q) setSearch(q)
-    if (cat) setSelectedCategory(cat)
   }, [])
 
   const loadData = async () => {
@@ -39,6 +34,22 @@ export default function Products() {
       setLoading(false)
     }
   }
+
+  // React to URL category changes
+  useEffect(() => {
+    const catParam = searchParams.get('category')
+    const q = searchParams.get('search')
+    if (q) setSearch(q)
+    if (catParam && categories.length > 0) {
+      const matched = categories.find(
+        (c) => c.name.toLowerCase() === catParam.toLowerCase() || c.name.toLowerCase().includes(catParam.toLowerCase())
+      )
+      if (matched) setSelectedCategory(matched.id)
+      else setSelectedCategory('')
+    } else if (!catParam) {
+      setSelectedCategory('')
+    }
+  }, [searchParams, categories])
 
   const filteredProducts = products
     .filter((p) => {

@@ -37,8 +37,9 @@ export default function Register() {
       const loginData = await authService.login(formData.email, formData.password)
       setToken(loginData.access_token)
       localStorage.setItem('auth_token', loginData.access_token)
-      setUser(await authService.getMe())
-      navigate('/dashboard')
+      const user = await authService.getMe()
+      setUser(user)
+      navigate(user.role === 'super_admin' || user.role === 'admin' ? '/admin' : '/dashboard')
     } catch (err: unknown) {
       const e2 = err as { response?: { data?: { detail?: string } } }
       setError(e2.response?.data?.detail || 'Registration failed. Please try again.')
