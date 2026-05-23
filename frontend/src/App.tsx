@@ -25,9 +25,11 @@ import AdminUsers from './pages/admin/AdminUsers'
 import AdminWithdrawals from './pages/admin/AdminWithdrawals'
 import AdminSettings from './pages/admin/AdminSettings'
 import ProtectedRoute from './components/ProtectedRoute'
+import Toaster from './components/ui/Toaster'
 
 function App() {
   return (
+    <>
     <Routes>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Home />} />
@@ -68,6 +70,8 @@ function App() {
         <Route path="settings" element={<AdminSettings />} />
       </Route>
     </Routes>
+    <Toaster />
+    </>
   )
 }
 

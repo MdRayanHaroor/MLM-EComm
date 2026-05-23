@@ -12,6 +12,7 @@ export default function Addresses() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ ...emptyForm })
   const [loading, setLoading] = useState(false)
+  const [busyAddresses, setBusyAddresses] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadAddresses() }, [])
 
@@ -36,13 +37,17 @@ export default function Addresses() {
   }
 
   const setDefault = async (id: string) => {
+    setBusyAddresses(prev => new Set(prev).add(id))
     try { await orderService.updateAddress(id, { is_default: true }); loadAddresses() }
     catch (e) { console.error(e) }
+    finally { setBusyAddresses(prev => { const s = new Set(prev); s.delete(id); return s }) }
   }
 
   const deleteAddress = async (id: string) => {
+    setBusyAddresses(prev => new Set(prev).add(id))
     try { await orderService.deleteAddress(id); loadAddresses() }
     catch (e) { console.error(e) }
+    finally { setBusyAddresses(prev => { const s = new Set(prev); s.delete(id); return s }) }
   }
 
   return (
@@ -160,11 +165,20 @@ export default function Addresses() {
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   {!addr.is_default && (
-                    <button onClick={() => setDefault(addr.id)} className="btn btn-secondary btn-sm" style={{ gap: '0.25rem', flex: 1, justifyContent: 'center' }}>
-                      <Check style={{ width: '13px', height: '13px' }} /> Set Default
+                    <button
+                      onClick={() => setDefault(addr.id)}
+                      disabled={busyAddresses.has(addr.id)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ gap: '0.25rem', flex: 1, justifyContent: 'center', opacity: busyAddresses.has(addr.id) ? 0.6 : 1, cursor: busyAddresses.has(addr.id) ? 'not-allowed' : 'pointer' }}>
+                      <Check style={{ width: '13px', height: '13px' }} />
+                      {busyAddresses.has(addr.id) ? 'Saving...' : 'Set Default'}
                     </button>
                   )}
-                  <button onClick={() => deleteAddress(addr.id)} className="btn btn-danger btn-sm" style={{ gap: '0.25rem' }}>
+                  <button
+                    onClick={() => deleteAddress(addr.id)}
+                    disabled={busyAddresses.has(addr.id)}
+                    className="btn btn-danger btn-sm"
+                    style={{ gap: '0.25rem', opacity: busyAddresses.has(addr.id) ? 0.5 : 1, cursor: busyAddresses.has(addr.id) ? 'not-allowed' : 'pointer' }}>
                     <Trash2 style={{ width: '13px', height: '13px' }} />
                   </button>
                 </div>

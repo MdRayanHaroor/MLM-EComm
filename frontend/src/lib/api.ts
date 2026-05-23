@@ -18,9 +18,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isUnauthenticated =
+      error.response?.status === 401 ||
+      (error.response?.status === 403 &&
+        (error.response?.data?.detail === 'Not authenticated' ||
+         error.response?.data?.detail === 'Invalid authentication credentials' ||
+         error.response?.data?.detail === 'Invalid or expired token'))
+
+    if (isUnauthenticated) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('user')
+      localStorage.removeItem('auth-storage')
       window.location.href = '/login'
     }
     return Promise.reject(error)

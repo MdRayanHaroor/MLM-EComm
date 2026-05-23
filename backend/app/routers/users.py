@@ -28,3 +28,14 @@ async def get_upline(user=Depends(get_current_user)):
 async def get_matrix(user=Depends(get_current_user)):
     position = supabase.table("matrix_positions").select("*").eq("user_id", user.id).execute()
     return position.data[0] if position.data else None
+
+
+@router.get("/referrer")
+async def get_referrer(user=Depends(get_current_user)):
+    user_data = supabase.table("users").select("sponsor_id").eq("id", user.id).execute()
+    if not user_data.data or not user_data.data[0]["sponsor_id"]:
+        return None
+    sponsor_id = user_data.data[0]["sponsor_id"]
+    sponsor_data = supabase.table("users").select("id, full_name, referral_code").eq("id", sponsor_id).execute()
+    return sponsor_data.data[0] if sponsor_data.data else None
+

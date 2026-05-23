@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Package, ShoppingCart, Users, Wallet,
-  Settings, LogOut, Menu, X, ChevronRight, Shield, BarChart2,
+  Settings, LogOut, Menu, X, ChevronRight, Shield, BarChart2, User,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
@@ -25,7 +25,7 @@ const pageTitles: Record<string, string> = {
 }
 
 export default function AdminLayout() {
-  const { logout } = useAuthStore()
+  const { logout, user } = useAuthStore()
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -41,6 +41,7 @@ export default function AdminLayout() {
   }
 
   const currentTitle = pageTitles[location.pathname] ?? 'Admin Panel'
+
 
   return (
     <div style={{ minHeight: '100vh', background: '#f0f2f5', display: 'flex' }}>
@@ -100,41 +101,47 @@ export default function AdminLayout() {
           <p style={{ fontSize: '0.65rem', fontWeight: 600, color: '#334155', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '0 0.5rem', marginBottom: '0.625rem' }}>
             Management
           </p>
-          {navItems.map((item) => {
-            const active = isActive(item.to, item.exact)
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  padding: '0.625rem 0.75rem',
-                  borderRadius: 'var(--radius-md)',
-                  textDecoration: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: active ? 600 : 500,
-                  color: active ? '#fff' : '#64748b',
-                  background: active
-                    ? 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.08))'
-                    : 'transparent',
-                  borderLeft: active ? '3px solid var(--amber-500)' : '3px solid transparent',
-                  marginBottom: '0.125rem',
-                  transition: 'all var(--transition-fast)',
-                }}
-                onMouseOver={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
-                onMouseOut={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
-                <item.icon style={{
-                  width: '17px', height: '17px', flexShrink: 0,
-                  color: active ? 'var(--amber-400)' : '#334155',
-                }} />
-                <span style={{ flex: 1 }}>{item.label}</span>
-                {active && <ChevronRight style={{ width: '14px', height: '14px', color: 'var(--amber-400)' }} />}
-              </Link>
-            )
-          })}
+          {(() => {
+            const items = [
+              ...navItems,
+              ...(user?.role === 'super_admin' ? [{ to: '/dashboard', icon: User, label: 'Member Dashboard', exact: false }] : [])
+            ]
+            return items.map((item) => {
+              const active = isActive(item.to, item.exact)
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setSidebarOpen(false)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.625rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    textDecoration: 'none',
+                    fontSize: '0.875rem',
+                    fontWeight: active ? 600 : 500,
+                    color: active ? '#fff' : '#64748b',
+                    background: active
+                      ? 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.08))'
+                      : 'transparent',
+                    borderLeft: active ? '3px solid var(--amber-500)' : '3px solid transparent',
+                    marginBottom: '0.125rem',
+                    transition: 'all var(--transition-fast)',
+                  }}
+                  onMouseOver={e => { if (!active) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                  onMouseOut={e => { if (!active) e.currentTarget.style.background = 'transparent' }}>
+                  <item.icon style={{
+                    width: '17px', height: '17px', flexShrink: 0,
+                    color: active ? 'var(--amber-400)' : '#334155',
+                  }} />
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {active && <ChevronRight style={{ width: '14px', height: '14px', color: 'var(--amber-400)' }} />}
+                </Link>
+              )
+            })
+          })()}
 
           {/* Analytics placeholder */}
           <div style={{ marginTop: '1.5rem' }}>

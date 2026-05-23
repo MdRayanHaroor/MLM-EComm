@@ -112,12 +112,20 @@ function DownlineNode({ node, depth = 0 }: { node: MatrixNode; depth?: number })
 
 export default function Downline() {
   const [tree, setTree] = useState<MatrixNode[]>([])
+  const [referrer, setReferrer] = useState<{ full_name: string; referral_code: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadDownline() }, [])
 
   const loadDownline = async () => {
-    try { setTree(await userService.getDownline()) }
+    try {
+      const [treeData, referrerData] = await Promise.all([
+        userService.getDownline(),
+        userService.getReferrer()
+      ])
+      setTree(treeData)
+      setReferrer(referrerData)
+    }
     catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
@@ -133,6 +141,35 @@ export default function Downline() {
         title="My Downline"
         subtitle={count > 0 ? `${count} member${count > 1 ? 's' : ''} in your network` : 'Grow your network by sharing your referral code'}
       />
+
+      {referrer && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(245, 158, 11, 0.03))',
+          border: '1px dashed var(--amber-500)',
+          borderRadius: 'var(--radius-md)',
+          padding: '0.875rem 1.25rem',
+          marginBottom: '1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          alignSelf: 'flex-start',
+        }}>
+          <span style={{ fontSize: '0.875rem', color: 'var(--navy-800)', fontWeight: 500 }}>
+            Referred by: <strong style={{ color: 'var(--navy-900)' }}>{referrer.full_name}</strong>
+          </span>
+          <span style={{
+            fontSize: '0.75rem',
+            background: 'var(--amber-100)',
+            color: 'var(--amber-800)',
+            padding: '0.2rem 0.5rem',
+            borderRadius: 'var(--radius-sm)',
+            fontWeight: 600,
+            fontFamily: 'monospace'
+          }}>
+            {referrer.referral_code}
+          </span>
+        </div>
+      )}
 
       {/* Level legend */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>

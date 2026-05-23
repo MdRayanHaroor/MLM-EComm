@@ -5,10 +5,12 @@ import { CartItem } from '../types'
 import { useCartStore } from '../store/cartStore'
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Shield, Truck, Tag } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState'
+import { toast, getErrorMessage } from '../store/toastStore'
 
 export default function Cart() {
   const [items, setItems] = useState<CartItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [busyItems, setBusyItems] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadCart() }, [])
 
@@ -17,19 +19,21 @@ export default function Cart() {
       const data = await cartService.getCart()
       setItems(data)
       useCartStore.getState().setItems(data)
-    } catch (e) { console.error(e) }
+    } catch (e) { toast.error(getErrorMessage(e)) }
     finally { setLoading(false) }
   }
 
-  const updateQty = async (id: string, qty: number) => {
-    await cartService.updateCartItem(id, qty)
-    loadCart()
+  const withBusy = async (id: string, fn: () => Promise<void>) => {
+    setBusyItems(prev => new Set(prev).add(id))
+    try { await fn() } catch (e) { toast.error(getErrorMessage(e)) }
+    finally { setBusyItems(prev => { const s = new Set(prev); s.delete(id); return s }) }
   }
 
-  const remove = async (id: string) => {
-    await cartService.removeFromCart(id)
-    loadCart()
-  }
+  const updateQty = (id: string, qty: number) =>
+    withBusy(id, async () => { await cartService.updateCartItem(id, qty); await loadCart() })
+
+  const remove = (id: string) =>
+    withBusy(id, async () => { await cartService.removeFromCart(id); await loadCart() })
 
   const subtotal = items.reduce((s, item) => s + (item.price || 0) * item.quantity, 0)
   const gstEstimate = subtotal * 0.18
@@ -99,13 +103,15 @@ export default function Cart() {
                     </p>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', border: '1.5px solid var(--gray-200)', borderRadius: '7px', overflow: 'hidden' }}>
-                        <button onClick={() => updateQty(item.id, item.quantity - 1)} disabled={item.quantity <= 1}
-                          style={{ padding: '0.375rem 0.625rem', background: 'var(--gray-50)', border: 'none', cursor: 'pointer', opacity: item.quantity <= 1 ? 0.4 : 1 }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', border: '1.5px solid var(--gray-200)', borderRadius: '7px', overflow: 'hidden', opacity: busyItems.has(item.id) ? 0.5 : 1 }}>
+                        <button onClick={() => updateQty(item.id, item.quantity - 1)} disabled={item.quantity <= 1 || busyItems.has(item.id)}
+                          style={{ padding: '0.375rem 0.625rem', background: 'var(--gray-50)', border: 'none', cursor: (item.quantity <= 1 || busyItems.has(item.id)) ? 'not-allowed' : 'pointer', opacity: item.quantity <= 1 ? 0.4 : 1 }}>
                           <Minus style={{ width: '13px', height: '13px' }} />
                         </button>
-                        <span style={{ padding: '0.375rem 0.875rem', fontSize: '0.875rem', fontWeight: 700, minWidth: '40px', textAlign: 'center' }}>{item.quantity}</span>
-                        <button onClick={() => updateQty(item.id, item.quantity + 1)} style={{ padding: '0.375rem 0.625rem', background: 'var(--gray-50)', border: 'none', cursor: 'pointer' }}>
+                        <span style={{ padding: '0.375rem 0.875rem', fontSize: '0.875rem', fontWeight: 700, minWidth: '40px', textAlign: 'center' }}>
+                          {busyItems.has(item.id) ? '…' : item.quantity}
+                        </span>
+                        <button onClick={() => updateQty(item.id, item.quantity + 1)} disabled={busyItems.has(item.id)} style={{ padding: '0.375rem 0.625rem', background: 'var(--gray-50)', border: 'none', cursor: busyItems.has(item.id) ? 'not-allowed' : 'pointer' }}>
                           <Plus style={{ width: '13px', height: '13px' }} />
                         </button>
                       </div>
@@ -114,9 +120,9 @@ export default function Cart() {
                         <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--navy-800)' }}>
                           ₹{((item.price || 0) * item.quantity).toLocaleString('en-IN')}
                         </span>
-                        <button onClick={() => remove(item.id)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: 'pointer', padding: '0.25rem', borderRadius: '4px', opacity: 0.7, transition: 'opacity var(--transition-fast)' }}
-                          onMouseOver={e => (e.currentTarget.style.opacity = '1')}
-                          onMouseOut={e => (e.currentTarget.style.opacity = '0.7')}>
+                        <button onClick={() => remove(item.id)} disabled={busyItems.has(item.id)} style={{ background: 'none', border: 'none', color: 'var(--color-danger)', cursor: busyItems.has(item.id) ? 'not-allowed' : 'pointer', padding: '0.25rem', borderRadius: '4px', opacity: busyItems.has(item.id) ? 0.3 : 0.7, transition: 'opacity var(--transition-fast)' }}
+                          onMouseOver={e => { if (!busyItems.has(item.id)) e.currentTarget.style.opacity = '1' }}
+                          onMouseOut={e => { if (!busyItems.has(item.id)) e.currentTarget.style.opacity = '0.7' }}>
                           <Trash2 style={{ width: '16px', height: '16px' }} />
                         </button>
                       </div>

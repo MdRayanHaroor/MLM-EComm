@@ -57,4 +57,9 @@ export const userService = {
     const { data } = await api.get('/users/matrix')
     return data
   },
+
+  getReferrer: async (): Promise<{ id: string; full_name: string; referral_code: string } | null> => {
+    const { data } = await api.get('/users/referrer')
+    return data
+  },
 }

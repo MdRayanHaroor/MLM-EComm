@@ -11,6 +11,7 @@ export default function AdminSettings() {
   const [commissionSettings, setCommissionSettings] = useState<CommissionSettings | null>(null)
   const [rankSettings, setRankSettings] = useState<RankSettings[]>([])
   const [savedComm, setSavedComm] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadSettings() }, [])
@@ -26,11 +27,13 @@ export default function AdminSettings() {
 
   const saveCommission = async () => {
     if (!commissionSettings) return
+    setSaving(true)
     try {
       await adminService.updateCommissionSettings(commissionSettings)
       setSavedComm(true)
       setTimeout(() => setSavedComm(false), 2500)
     } catch (e) { console.error(e) }
+    finally { setSaving(false) }
   }
 
   const tabs: { id: Tab; label: string; icon: typeof DollarSign }[] = [
@@ -103,8 +106,8 @@ export default function AdminSettings() {
               ))}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <button onClick={saveCommission} className="btn btn-primary">
-                Save Commission Settings
+              <button onClick={saveCommission} disabled={saving} className="btn btn-primary">
+                {saving ? 'Saving...' : 'Save Commission Settings'}
               </button>
               {savedComm && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', color: 'var(--color-success)', fontSize: '0.875rem', fontWeight: 600 }}>

@@ -5,6 +5,7 @@ import { cartService } from '../services/cart'
 import { Product } from '../types'
 import { useCartStore } from '../store/cartStore'
 import { ShoppingCart, Star, Shield, Truck, RotateCcw, Package, Minus, Plus, CheckCircle, ChevronRight, Zap } from 'lucide-react'
+import { toast, getErrorMessage } from '../store/toastStore'
 
 export default function ProductDetail() {
   const { slug } = useParams()
@@ -13,6 +14,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [added, setAdded] = useState(false)
+  const [adding, setAdding] = useState(false)
 
   useEffect(() => { loadProduct() }, [slug])
 
@@ -21,16 +23,24 @@ export default function ProductDetail() {
       const data = await productService.getProductBySlug(slug!)
       setProduct(data)
       if (data.variants?.[0]) setSelectedVariant(data.variants[0].id)
-    } catch (e) { console.error(e) }
+    } catch (e) { toast.error(getErrorMessage(e)) }
     finally { setLoading(false) }
   }
 
   const handleAddToCart = async () => {
-    if (!product) return
-    await cartService.addToCart({ product_id: product.id, variant_id: selectedVariant || undefined, quantity })
-    useCartStore.getState().setItems(await cartService.getCart())
-    setAdded(true)
-    setTimeout(() => setAdded(false), 2500)
+    if (!product || adding) return
+    setAdding(true)
+    try {
+      await cartService.addToCart({ product_id: product.id, variant_id: selectedVariant || undefined, quantity })
+      useCartStore.getState().setItems(await cartService.getCart())
+      setAdded(true)
+      toast.success('Added to cart!')
+      setTimeout(() => setAdded(false), 2500)
+    } catch (e) {
+      toast.error(getErrorMessage(e))
+    } finally {
+      setAdding(false)
+    }
   }
 
   if (loading) return (
@@ -146,10 +156,16 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <button onClick={handleAddToCart} className="btn btn-full btn-xl"
+              <button onClick={handleAddToCart} className="btn btn-full btn-xl" disabled={adding}
                 style={added ? { background: 'var(--color-success)', color: '#fff', width: '100%', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }
-                  : { background: 'linear-gradient(135deg, var(--amber-500), var(--amber-600))', color: '#1a1a1a', width: '100%', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: 'none', padding: '0.875rem 1.75rem', borderRadius: 'var(--radius-md)', fontWeight: 700, cursor: 'pointer' }}>
-                {added ? <><CheckCircle style={{ width: '20px', height: '20px' }} /> Added!</> : <><ShoppingCart style={{ width: '20px', height: '20px' }} /> Add to Cart</>}
+                  : { background: 'linear-gradient(135deg, var(--amber-500), var(--amber-600))', color: '#1a1a1a', width: '100%', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: 'none', padding: '0.875rem 1.75rem', borderRadius: 'var(--radius-md)', fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer', opacity: adding ? 0.7 : 1 }}>
+                {adding ? (
+                  <>Adding to Cart...</>
+                ) : added ? (
+                  <><CheckCircle style={{ width: '20px', height: '20px' }} /> Added!</>
+                ) : (
+                  <><ShoppingCart style={{ width: '20px', height: '20px' }} /> Add to Cart</>
+                )}
               </button>
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>

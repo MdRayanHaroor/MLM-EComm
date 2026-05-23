@@ -12,6 +12,7 @@ def place_in_matrix(user_id: str, sponsor_id: str):
         sponsor_matrix = supabase.table("matrix_positions").select("*").eq("user_id", current_sponsor).execute()
 
         if not sponsor_matrix.data:
+            # Sponsor has no matrix row yet; place under original sponsor with no parent
             _create_position(user_id, sponsor_id, None, 1)
             return
 
@@ -19,6 +20,7 @@ def place_in_matrix(user_id: str, sponsor_id: str):
 
         for pos in range(1, 5):
             if pos not in filled_positions:
+                # parent_user_id = current_sponsor so we can resolve to matrix_positions.id
                 _create_position(user_id, current_sponsor, current_sponsor, pos)
                 return
 
@@ -29,11 +31,26 @@ def place_in_matrix(user_id: str, sponsor_id: str):
     _spillover_placement(user_id, sponsor_id)
 
 
-def _create_position(user_id: str, sponsor_id: str, parent_id: str | None, position: int):
-    sponsor_level = supabase.table("matrix_positions").select("level").eq("user_id", sponsor_id).execute()
+def _create_position(user_id: str, sponsor_id: str, parent_user_id: str | None, position: int):
+    """
+    Insert a new matrix_positions row for user_id.
+
+    parent_user_id: the user_id of the parent node (used to look up the
+                    matrix_positions.id UUID that satisfies the FK constraint).
+                    Pass None when the new node has no parent (root / orphan).
+    """
+    sponsor_row = supabase.table("matrix_positions").select("id, level").eq("user_id", sponsor_id).execute()
     level = 0
-    if sponsor_level.data:
-        level = sponsor_level.data[0]["level"] + 1
+    if sponsor_row.data:
+        level = sponsor_row.data[0]["level"] + 1
+
+    # Resolve parent_id: the FK references matrix_positions.id, NOT users.id
+    parent_id = None
+    if parent_user_id is not None:
+        parent_row = supabase.table("matrix_positions").select("id").eq("user_id", parent_user_id).execute()
+        if parent_row.data:
+            parent_id = parent_row.data[0]["id"]
+        # If the parent has no matrix row yet, leave parent_id as None to avoid FK violation
 
     supabase.table("matrix_positions").insert({
         "user_id": user_id,
